@@ -17,8 +17,12 @@ class Fornitore(Base):
     ambito_fornitura: Mapped[str | None] = mapped_column(String(255), nullable=True)
     stato_approvazione: Mapped[str | None] = mapped_column(String(80), nullable=True)
 
-    punctualita_consegne_pct: Mapped[float | None] = mapped_column(Float, nullable=True)
+    puntualita_consegne_pct: Mapped[float | None] = mapped_column("punctualita_consegne_pct", Float, nullable=True)
     kpi_last_update: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+
+    @property
+    def punctualita_consegne_pct(self):
+        return self.puntualita_consegne_pct
 
     note: Mapped[str | None] = mapped_column(Text, nullable=True)
     ultimo_sync: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
