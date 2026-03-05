@@ -19,10 +19,15 @@ Tool desktop in Python per gestire:
 - SQLite (file locale): `data/app.db`
 - Migrazioni: per semplicità la prima versione crea automaticamente le tabelle all'avvio.
 
-## Import CSV
+## Import CSV/Excel
 Menu: **File → Importa CSV**
 - Importa Fornitori, Ordini, Certificazioni
+- Formati supportati: `.csv`, `.xlsx`, `.xls`
 - Upsert: usa `external_uid` come chiave univoca (se esiste aggiorna, altrimenti inserisce)
+
+## CRUD completo
+- Ogni tab supporta creazione (`Nuovo`), modifica inline di tutte le colonne visibili e cancellazione (`Elimina`).
+- I dati vengono salvati nel database SQLite locale (`data/app.db`) e ricaricati automaticamente al successivo avvio.
 
 ## KPI
 Campo `puntualita_consegne_pct` in `fornitori` è calcolabile dal software (pulsante nel tab Fornitori).

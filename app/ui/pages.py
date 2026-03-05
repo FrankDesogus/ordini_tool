@@ -8,6 +8,17 @@ from app.db.session import get_session
 from app.db.models import Fornitore, Ordine, Certificazione
 from app.ui.table_model import DictTableModel
 from app.services.kpi import update_all_kpi
+from app.services.crud import (
+    create_fornitore,
+    delete_fornitore,
+    update_fornitore_field,
+    create_ordine,
+    delete_ordine,
+    update_ordine_field,
+    create_certificazione,
+    delete_certificazione,
+    update_certificazione_field,
+)
 
 class FornitoriPage(QWidget):
     def __init__(self):
@@ -16,10 +27,14 @@ class FornitoriPage(QWidget):
         self.search.setPlaceholderText("Cerca ragione sociale / UID...")
         self.btn_refresh = QPushButton("Aggiorna")
         self.btn_kpi = QPushButton("Calcola KPI puntualità")
+        self.btn_add = QPushButton("Nuovo")
+        self.btn_delete = QPushButton("Elimina")
 
         top = QHBoxLayout()
         top.addWidget(QLabel("Filtro:"))
         top.addWidget(self.search, 1)
+        top.addWidget(self.btn_add)
+        top.addWidget(self.btn_delete)
         top.addWidget(self.btn_kpi)
         top.addWidget(self.btn_refresh)
 
@@ -32,6 +47,7 @@ class FornitoriPage(QWidget):
         layout.addLayout(top)
         layout.addWidget(self.table, 1)
 
+        self._row_ids = []
         self.model = DictTableModel([], [
             ("external_uid", "UID"),
             ("ragione_sociale", "Ragione Sociale"),
@@ -42,10 +58,12 @@ class FornitoriPage(QWidget):
             ("kpi_last_update", "KPI aggiornato"),
             ("note", "Note"),
             ("ultimo_sync", "Ultimo Sync"),
-        ])
+        ], on_cell_edited=self._on_cell_edited)
         self.table.setModel(self.model)
 
         self.btn_refresh.clicked.connect(self.refresh)
+        self.btn_add.clicked.connect(self.add_record)
+        self.btn_delete.clicked.connect(self.delete_selected)
         self.search.textChanged.connect(self.refresh)
         self.btn_kpi.clicked.connect(self.compute_kpi)
 
@@ -57,11 +75,13 @@ class FornitoriPage(QWidget):
             stmt = select(Fornitore)
             items = s.scalars(stmt).all()
             rows = []
+            ids = []
             for f in items:
                 if q:
                     hay = f"{f.external_uid} {f.ragione_sociale or ''}".lower()
                     if q not in hay:
                         continue
+                ids.append(f.id)
                 rows.append({
                     "external_uid": f.external_uid,
                     "ragione_sociale": f.ragione_sociale,
@@ -73,7 +93,27 @@ class FornitoriPage(QWidget):
                     "note": f.note,
                     "ultimo_sync": f.ultimo_sync,
                 })
+        self._row_ids = ids
         self.model.set_rows(rows)
+
+    def _on_cell_edited(self, row: int, field: str, value: str) -> bool:
+        try:
+            update_fornitore_field(self._row_ids[row], field, value)
+            return True
+        except Exception as ex:
+            QMessageBox.warning(self, "Modifica non valida", str(ex))
+            return False
+
+    def add_record(self):
+        create_fornitore()
+        self.refresh()
+
+    def delete_selected(self):
+        idx = self.table.currentIndex()
+        if not idx.isValid():
+            return
+        delete_fornitore(self._row_ids[idx.row()])
+        self.refresh()
 
     def compute_kpi(self):
         with get_session() as s:
@@ -87,10 +127,14 @@ class OrdiniPage(QWidget):
         self.search = QLineEdit()
         self.search.setPlaceholderText("Cerca numero / fornitore UID / stato...")
         self.btn_refresh = QPushButton("Aggiorna")
+        self.btn_add = QPushButton("Nuovo")
+        self.btn_delete = QPushButton("Elimina")
 
         top = QHBoxLayout()
         top.addWidget(QLabel("Filtro:"))
         top.addWidget(self.search, 1)
+        top.addWidget(self.btn_add)
+        top.addWidget(self.btn_delete)
         top.addWidget(self.btn_refresh)
 
         self.table = QTableView()
@@ -101,6 +145,7 @@ class OrdiniPage(QWidget):
         layout.addLayout(top)
         layout.addWidget(self.table, 1)
 
+        self._row_ids = []
         self.model = DictTableModel([], [
             ("external_uid", "UID"),
             ("numero", "Numero"),
@@ -115,10 +160,12 @@ class OrdiniPage(QWidget):
             ("stato", "Stato"),
             ("imputazione", "Imputazione"),
             ("ultimo_sync", "Ultimo Sync"),
-        ])
+        ], on_cell_edited=self._on_cell_edited)
         self.table.setModel(self.model)
 
         self.btn_refresh.clicked.connect(self.refresh)
+        self.btn_add.clicked.connect(self.add_record)
+        self.btn_delete.clicked.connect(self.delete_selected)
         self.search.textChanged.connect(self.refresh)
         self.refresh()
 
@@ -127,11 +174,13 @@ class OrdiniPage(QWidget):
         with get_session() as s:
             items = s.scalars(select(Ordine)).all()
             rows = []
+            ids = []
             for o in items:
                 if q:
                     hay = f"{o.numero or ''} {o.fornitore_external_uid} {o.stato or ''} {o.external_uid}".lower()
                     if q not in hay:
                         continue
+                ids.append(o.id)
                 rows.append({
                     "external_uid": o.external_uid,
                     "numero": o.numero,
@@ -147,7 +196,27 @@ class OrdiniPage(QWidget):
                     "imputazione": o.imputazione,
                     "ultimo_sync": o.ultimo_sync,
                 })
+        self._row_ids = ids
         self.model.set_rows(rows)
+
+    def _on_cell_edited(self, row: int, field: str, value: str) -> bool:
+        try:
+            update_ordine_field(self._row_ids[row], field, value)
+            return True
+        except Exception as ex:
+            QMessageBox.warning(self, "Modifica non valida", str(ex))
+            return False
+
+    def add_record(self):
+        create_ordine()
+        self.refresh()
+
+    def delete_selected(self):
+        idx = self.table.currentIndex()
+        if not idx.isValid():
+            return
+        delete_ordine(self._row_ids[idx.row()])
+        self.refresh()
 
 class CertificazioniPage(QWidget):
     def __init__(self):
@@ -155,10 +224,14 @@ class CertificazioniPage(QWidget):
         self.search = QLineEdit()
         self.search.setPlaceholderText("Cerca tipo / fornitore UID...")
         self.btn_refresh = QPushButton("Aggiorna")
+        self.btn_add = QPushButton("Nuovo")
+        self.btn_delete = QPushButton("Elimina")
 
         top = QHBoxLayout()
         top.addWidget(QLabel("Filtro:"))
         top.addWidget(self.search, 1)
+        top.addWidget(self.btn_add)
+        top.addWidget(self.btn_delete)
         top.addWidget(self.btn_refresh)
 
         self.table = QTableView()
@@ -169,6 +242,7 @@ class CertificazioniPage(QWidget):
         layout.addLayout(top)
         layout.addWidget(self.table, 1)
 
+        self._row_ids = []
         self.model = DictTableModel([], [
             ("external_uid", "UID"),
             ("fornitore_external_uid", "Fornitore UID"),
@@ -177,10 +251,12 @@ class CertificazioniPage(QWidget):
             ("data_scadenza", "Scadenza"),
             ("codice_certificazione", "Codice"),
             ("ultimo_sync", "Ultimo Sync"),
-        ])
+        ], on_cell_edited=self._on_cell_edited)
         self.table.setModel(self.model)
 
         self.btn_refresh.clicked.connect(self.refresh)
+        self.btn_add.clicked.connect(self.add_record)
+        self.btn_delete.clicked.connect(self.delete_selected)
         self.search.textChanged.connect(self.refresh)
         self.refresh()
 
@@ -189,11 +265,13 @@ class CertificazioniPage(QWidget):
         with get_session() as s:
             items = s.scalars(select(Certificazione)).all()
             rows = []
+            ids = []
             for c in items:
                 if q:
                     hay = f"{c.fornitore_external_uid} {c.tipo_certificazione or ''} {c.external_uid}".lower()
                     if q not in hay:
                         continue
+                ids.append(c.id)
                 rows.append({
                     "external_uid": c.external_uid,
                     "fornitore_external_uid": c.fornitore_external_uid,
@@ -203,4 +281,24 @@ class CertificazioniPage(QWidget):
                     "codice_certificazione": c.codice_certificazione,
                     "ultimo_sync": c.ultimo_sync,
                 })
+        self._row_ids = ids
         self.model.set_rows(rows)
+
+    def _on_cell_edited(self, row: int, field: str, value: str) -> bool:
+        try:
+            update_certificazione_field(self._row_ids[row], field, value)
+            return True
+        except Exception as ex:
+            QMessageBox.warning(self, "Modifica non valida", str(ex))
+            return False
+
+    def add_record(self):
+        create_certificazione()
+        self.refresh()
+
+    def delete_selected(self):
+        idx = self.table.currentIndex()
+        if not idx.isValid():
+            return
+        delete_certificazione(self._row_ids[idx.row()])
+        self.refresh()

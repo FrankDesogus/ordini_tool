@@ -7,14 +7,14 @@ from app.services.importer import import_fornitori_csv, import_ordini_csv, impor
 class ImportDialog(QDialog):
     def __init__(self, parent=None):
         super().__init__(parent)
-        self.setWindowTitle("Import CSV")
+        self.setWindowTitle("Import file (CSV/Excel)")
 
         self.log = QTextEdit()
         self.log.setReadOnly(True)
 
-        self.btn_forn = QPushButton("Importa Fornitori CSV")
-        self.btn_ord = QPushButton("Importa Ordini CSV")
-        self.btn_cert = QPushButton("Importa Certificazioni CSV")
+        self.btn_forn = QPushButton("Importa Fornitori")
+        self.btn_ord = QPushButton("Importa Ordini")
+        self.btn_cert = QPushButton("Importa Certificazioni")
         self.btn_close = QPushButton("Chiudi")
 
         btns = QHBoxLayout()
@@ -34,7 +34,7 @@ class ImportDialog(QDialog):
         self.btn_cert.clicked.connect(lambda: self._run("certificazioni"))
 
     def _pick_file(self) -> str | None:
-        path, _ = QFileDialog.getOpenFileName(self, "Seleziona CSV", "", "CSV (*.csv)")
+        path, _ = QFileDialog.getOpenFileName(self, "Seleziona file", "", "File supportati (*.csv *.xlsx *.xls)")
         return path or None
 
     def _run(self, kind: str) -> None:
