@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Iterable
+from pathlib import Path
 import pandas as pd
 
 from sqlalchemy import select
@@ -18,7 +18,7 @@ class ImportResult:
     errors: int = 0
 
 def import_fornitori_csv(session: Session, csv_path: str) -> ImportResult:
-    df = pd.read_csv(csv_path)
+    df = _read_tabular_file(csv_path)
     res = ImportResult()
     for _, r in df.iterrows():
         try:
@@ -52,7 +52,7 @@ def import_fornitori_csv(session: Session, csv_path: str) -> ImportResult:
     return res
 
 def import_ordini_csv(session: Session, csv_path: str) -> ImportResult:
-    df = pd.read_csv(csv_path)
+    df = _read_tabular_file(csv_path)
     res = ImportResult()
     for _, r in df.iterrows():
         try:
@@ -115,7 +115,7 @@ def import_ordini_csv(session: Session, csv_path: str) -> ImportResult:
     return res
 
 def import_certificazioni_csv(session: Session, csv_path: str) -> ImportResult:
-    df = pd.read_csv(csv_path)
+    df = _read_tabular_file(csv_path)
     res = ImportResult()
     for _, r in df.iterrows():
         try:
@@ -163,3 +163,9 @@ def _to_nullable_str(v):
     if s == "" or s.lower() == "nan":
         return None
     return s
+
+def _read_tabular_file(path: str) -> pd.DataFrame:
+    ext = Path(path).suffix.lower()
+    if ext in {".xlsx", ".xls"}:
+        return pd.read_excel(path)
+    return pd.read_csv(path)
