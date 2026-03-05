@@ -19,7 +19,7 @@ def run() -> None:
 
     init_db(f"sqlite:///{db_path}")
 
-    w = MainWindow()
+    w = MainWindow(str(db_path))
     w.resize(1200, 750)
     w.show()
 
