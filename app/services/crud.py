@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from uuid import uuid4
 
-from sqlalchemy import select
+from sqlalchemy import delete, select
 
 from app.db.models import Fornitore, Ordine, Certificazione
 from app.db.session import get_session
@@ -88,6 +88,14 @@ def delete_certificazione(record_id: int) -> None:
         if obj:
             s.delete(obj)
             s.commit()
+
+
+def delete_all_data() -> None:
+    with get_session() as s:
+        s.execute(delete(Certificazione))
+        s.execute(delete(Ordine))
+        s.execute(delete(Fornitore))
+        s.commit()
 
 
 def update_fornitore_field(record_id: int, field: str, raw_value: str) -> None:

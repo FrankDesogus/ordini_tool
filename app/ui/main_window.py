@@ -3,6 +3,7 @@ from __future__ import annotations
 from PyQt6.QtGui import QAction
 from PyQt6.QtWidgets import QMainWindow, QMessageBox, QTabWidget
 
+from app.services.crud import delete_all_data
 from app.ui.import_dialog import ImportDialog
 from app.ui.pages import CertificazioniPage, FornitoriPage, OrdiniPage
 from app.ui.report_dialog import ScaduteReportDialog
@@ -38,6 +39,9 @@ class MainWindow(QMainWindow):
         act_refresh = QAction("Ricarica tabelle", self)
         act_refresh.triggered.connect(self.refresh_all)
 
+        act_delete_all = QAction("Cancella tutti i dati", self)
+        act_delete_all.triggered.connect(self.confirm_delete_all_data)
+
         act_about = QAction("Info", self)
         act_about.triggered.connect(self.about)
 
@@ -46,6 +50,7 @@ class MainWindow(QMainWindow):
 
         m_file.addAction(act_import)
         m_file.addAction(act_refresh)
+        m_file.addAction(act_delete_all)
         m_file.addSeparator()
         m_file.addAction(act_about)
 
@@ -61,6 +66,21 @@ class MainWindow(QMainWindow):
         self.ordini_page.refresh()
         self.cert_page.refresh()
         self.statusBar().showMessage(f"DB aperto: {self.db_path}")
+
+    def confirm_delete_all_data(self):
+        reply = QMessageBox.question(
+            self,
+            "Conferma cancellazione",
+            "Vuoi davvero cancellare tutti i dati (fornitori, ordini e certificazioni)?\nQuesta operazione non è reversibile.",
+            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+            QMessageBox.StandardButton.No,
+        )
+        if reply != QMessageBox.StandardButton.Yes:
+            return
+
+        delete_all_data()
+        self.refresh_all()
+        self.statusBar().showMessage(f"DB aperto: {self.db_path} - tutti i dati sono stati cancellati")
 
     def open_report_scadute(self):
         dlg = ScaduteReportDialog(self)
